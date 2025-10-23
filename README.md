@@ -4,7 +4,7 @@ A clean, component-based design system for Autospend policy pages, built with Re
 
 ## 🚀 Live Demo
 
-Visit the [live demo](https://supremeio.github.io/autospend-policies/design-system/demo/) to see the design system in action.
+Visit the [live demo](https://supremeio.github.io/autospend-policies/) to see the design system in action.
 
 ## 🎨 Features
 
