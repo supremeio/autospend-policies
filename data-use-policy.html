@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Use Policy - Autospend Policy Design System</title>
+    <style>
+        /* Import Figtree font */
+        @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #ffffff;
+        }
+        
+        /* Design Tokens */
+        :root {
+            --primary: #2a58dc;
+            --text-primary: #13212f;
+            --text-primary-subdued: #475569;
+            --text-on-primary: #ffffff;
+            --background-primary: #ffffff;
+            --background-secondary: #eaeefb;
+            --background-primary-subdued: #f3f6f8;
+            --border-primary: #e2e8f0;
+        }
+        
+        /* ===== LAYOUT ===== */
+        .policy-template {
+            background-color: var(--background-primary);
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            padding: 0;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 64px;
+            align-items: flex-start;
+            flex: 1;
+            width: 100%;
+        }
+        
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            height: 80px;
+            padding: 20px 80px;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            align-self: stretch;
+            background-color: var(--background-primary);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
+        .logo {
+            height: 24px;
+            width: 122px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        /* ===== BUTTON ===== */
+        .button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+            line-height: 1.45;
+            letter-spacing: 0.28px;
+            background-color: var(--primary);
+            color: var(--text-on-primary);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .button:hover {
+            background-color: #F3F6F8;
+            color: var(--primary);
+            transform: translateY(-1px);
+        }
+        
+        .button-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .button-icon img {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 48px;
+            width: 360px;
+            padding: 24px 0;
+            padding-left: 80px;
+            padding-right: 40px;
+            box-sizing: border-box;
+            position: fixed;
+            top: 80px;
+            left: 0;
+            bottom: 0;
+            z-index: 999;
+            background-color: var(--background-primary);
+            overflow-y: auto;
+        }
+        
+        .sidebar-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+        }
+        
+        .sidebar-heading {
+            font-family: 'Figtree', sans-serif;
+            font-weight: 600;
+            font-size: 20px;
+            line-height: 32px;
+            letter-spacing: -0.2px;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .sidebar-container {
+            border-left: 1px solid var(--border-primary);
+            padding-left: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            width: 100%;
+        }
+        
+        .sidebar-link {
+            display: flex;
+            align-items: flex-start;
+            align-self: stretch;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+            line-height: 145%;
+            letter-spacing: 0.14px;
+            font-variant-numeric: lining-nums tabular-nums;
+            font-feature-settings: 'salt' on;
+            width: 100%;
+            text-align: left;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: var(--background-primary);
+            color: #475569;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar-link.active {
+            background-color: var(--background-secondary);
+            color: var(--primary);
+            transform: translateX(4px);
+        }
+        
+        .sidebar-link.disabled {
+            background-color: #FFF;
+            color: #475569;
+            cursor: not-allowed;
+            opacity: 1;
+        }
+        
+        .sidebar-link:hover:not(.disabled) {
+            border-radius: 8px;
+            background-color: #F3F6F8;
+            transform: translateX(2px);
+            color: #2A58DC;
+        }
+        
+        /* ===== CONTENT AREA ===== */
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            padding: 40px 80px 40px 120px;
+            min-height: fit-content;
+            margin-top: 80px;
+            margin-left: 360px;
+        }
+        
+        .page-title {
+            align-self: stretch;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 500;
+            font-size: 32px;
+            line-height: 40px;
+            letter-spacing: -0.96px;
+            font-feature-settings: 'salt' on;
+            color: #13212F;
+            margin: 0;
+        }
+        
+        .content-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .content-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .section-heading {
+            align-self: stretch;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 400;
+            font-size: 20px;
+            line-height: 28px;
+            text-transform: uppercase;
+            color: #2A58DC;
+            margin: 0;
+        }
+        
+        .content-text {
+            align-self: stretch;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 400;
+            font-size: 16px;
+            line-height: 24px;
+            font-feature-settings: 'salt' on;
+            color: #475569;
+            margin: 0;
+        }
+        
+        .content-text strong {
+            color: #13212F;
+            font-weight: 600;
+            font-feature-settings: 'salt' on;
+        }
+        
+        .content-text p {
+            margin-bottom: 16px;
+        }
+        
+        .content-text p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .content-text ul {
+            padding-left: 20px;
+            margin: 16px 0;
+        }
+        
+        .content-text li {
+            margin-bottom: 8px;
+        }
+        
+        .content-text li:last-child {
+            margin-bottom: 0;
+        }
+        
+        .agreement-statement {
+            padding: 24px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            margin-top: 24px;
+        }
+        
+        .agreement-statement p {
+            margin: 0;
+            font-weight: 600;
+            color: #13212F;
+        }
+        
+        /* ===== MOBILE NAVIGATION ===== */
+        .mobile-nav-toggle {
+            display: none;
+        }
+        
+        .mobile-get-started {
+            display: none;
+        }
+        
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 1200px) {
+            .main-content {
+                gap: 40px;
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            .main-content {
+                gap: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .policy-template {
+                gap: 24px;
+                padding: 0;
+            }
+            
+            .header {
+                height: 60px;
+                padding: 16px 0;
+            }
+            
+            .main-content {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .sidebar {
+                position: fixed;
+                top: 60px;
+                left: 0;
+                right: 0;
+                width: 100%;
+                padding: 20px 16px;
+                padding-right: 0;
+                gap: 24px;
+                display: none;
+                background-color: var(--background-primary);
+                border-bottom: 1px solid var(--border-primary);
+                z-index: 1000;
+                max-height: 60vh;
+                overflow-y: auto;
+            }
+            
+            .sidebar.mobile-open {
+                display: flex;
+            }
+            
+            .mobile-nav-toggle {
+                display: block;
+                background: none;
+                border: none;
+                font-size: 18px;
+                cursor: pointer;
+                padding: 8px;
+            }
+            
+            .mobile-get-started {
+                display: block;
+                margin-top: 24px;
+                padding-top: 16px;
+                border-top: 1px solid var(--border-primary);
+            }
+            
+            .mobile-get-started .button {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            
+            .content-area {
+                padding: 20px 0;
+                gap: 24px;
+                margin-top: 60px;
+                margin-left: 0;
+            }
+            
+            .page-title {
+                font-size: 24px;
+                line-height: 32px;
+                letter-spacing: -0.72px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="policy-template">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <img src="assets/autospend-logo.svg" alt="Autospend" />
+            </div>
+            <div class="header-right">
+                <button class="button" onclick="alert('Get started for free clicked!')">
+                    <span>Get started for free</span>
+                    <div class="button-icon">
+                        <img src="assets/button-arrow-icon.svg" alt="arrow" />
+                    </div>
+                </button>
+                <button class="mobile-nav-toggle" onclick="toggleMobileNav()">☰</button>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <nav class="sidebar" id="sidebar">
+                <!-- Policies Section -->
+                <div class="sidebar-section">
+                    <h3 class="sidebar-heading">Policies</h3>
+                    <div class="sidebar-container">
+                        <button class="sidebar-link" onclick="window.location.href='index.html'">Terms and conditions</button>
+                        <button class="sidebar-link" onclick="window.location.href='cookie-policy.html'">Cookie policy</button>
+                        <button class="sidebar-link active">Data use policy</button>
+                        <button class="sidebar-link" onclick="window.location.href='e-merchant-agreement.html'">E-marchant exchange serive agreement</button>
+                        <button class="sidebar-link" onclick="window.location.href='information-security-policy.html'">Information security policy</button>
+                        <button class="sidebar-link" onclick="window.location.href='privacy-policy.html'">Privacy policy</button>
+                        <button class="sidebar-link" onclick="window.location.href='risk-management-policy.html'">Risk management policy</button>
+                    </div>
+                </div>
+                
+                <!-- KYC Section - Hidden for now -->
+                <!-- <div class="sidebar-section">
+                    <h3 class="sidebar-heading">KYC</h3>
+                    <div class="sidebar-container">
+                        <button class="sidebar-link">Questionnaire corporate</button>
+                        <button class="sidebar-link">Questionnaire individual</button>
+                        <button class="sidebar-link">Declaration of source of funds</button>
+                        <button class="sidebar-link">KYC SOP</button>
+                    </div>
+                </div> -->
+                
+                <!-- Mobile Get Started Button -->
+                <div class="mobile-get-started">
+                    <button class="button" onclick="alert('Get started for free clicked!')">
+                        <span>Get started for free</span>
+                        <div class="button-icon">
+                            <img src="assets/button-arrow-icon.svg" alt="arrow" />
+                        </div>
+                    </button>
+                </div>
+            </nav>
+            
+            <!-- Content Area -->
+            <main class="content-area">
+                <h1 class="page-title">Data Use Policy</h1>
+                
+                <!-- Purpose Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Purpose</h2>
+                    <div class="content-text">
+                        <p>This Data Use Policy outlines how Stable Payments Inc. ("AutoSpend") collects, uses, stores, and protects Personal Identifiable Information (PII) and other sensitive information of its customers (individual and corporate), employees, vendors, and partners. It also governs the use and handling of the company's internal confidential data. This policy aims to ensure compliance with U.S. laws, global data protection regulations (e.g., GDPR, NDPR), and information security standards.</p>
+                    </div>
+                </div>
+
+                <!-- Scope Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Scope</h2>
+                    <div class="content-text">
+                        <p>This policy applies to:</p>
+                        <ul>
+                            <li>All employees, contractors, and third-party service providers of AutoSpend.</li>
+                            <li>All PII, sensitive personal data, and confidential business data processed via AutoSpend's platforms.</li>
+                            <li>Users globally, including in the U.S., Nigeria, U.K., China, and other serviced jurisdictions.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Definitions Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Definitions</h2>
+                    <div class="content-text">
+                        <ul>
+                            <li><strong>Personal Identifiable Information (PII):</strong> Any data that can identify an individual, e.g., name, address, ID number, BVN.</li>
+                            <li><strong>Confidential Information:</strong> Internal business, financial, strategic, or customer-related data not intended for public access.</li>
+                            <li><strong>Data Subject:</strong> Any person or entity whose data is processed by AutoSpend.</li>
+                            <li><strong>Processing:</strong> Any operation involving data - collection, recording, storage, modification, transfer, or deletion.</li>
+                            <li><strong>Third Party:</strong> External service provider with authorized data access.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Data Collection Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Data Collection</h2>
+                    <div class="content-text">
+                        <p>AutoSpend collects the following categories of data for legitimate business and regulatory purposes:</p>
+                        
+                        <p><strong>a. Customer and Employee Data</strong></p>
+                        <ul>
+                            <li>Full name, contact information, addresses</li>
+                            <li>Government-issued IDs (passport, driver's license, BVN, etc.)</li>
+                            <li>Business registration and licensing documents</li>
+                            <li>UBO and director information</li>
+                            <li>Employment details and internal HR records</li>
+                        </ul>
+
+                        <p><strong>b. Technical Data (Web and App)</strong></p>
+                        <ul>
+                            <li>IP address, browser type, operating system</li>
+                            <li>Device information, session timestamps</li>
+                            <li>Geo-location (where applicable)</li>
+                            <li>Usage logs, error reports, clickstream data</li>
+                            <li>Authentication and access tokens</li>
+                        </ul>
+
+                        <p>This data is collected using secure digital forms, cookies, APIs, or analytics tools to enhance user experience, perform KYC/AML verification, detect fraud, and optimize system performance.</p>
+                    </div>
+                </div>
+
+                <!-- Data Use Principles Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Data Use Principles</h2>
+                    <div class="content-text">
+                        <p>AutoSpend processes all data based on these guiding principles:</p>
+                        <ul>
+                            <li>Lawfulness, Fairness, and Transparency</li>
+                            <li>Purpose Limitation - Only for stated objectives</li>
+                            <li>Data Minimization - Collect only what is necessary</li>
+                            <li>Accuracy - Keep information up-to-date</li>
+                            <li>Storage Limitation - Retain only as long as required</li>
+                            <li>Integrity and Confidentiality - Use appropriate security controls</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Employee Responsibilities Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Employee Responsibilities</h2>
+                    <div class="content-text">
+                        <p>Employees and contractors must:</p>
+                        <ul>
+                            <li>Access customer or company data only on a need-to-know basis.</li>
+                            <li>Use encrypted or secure communication channels when transmitting sensitive data.</li>
+                            <li>Never share PII or confidential data via unapproved apps or personal devices.</li>
+                            <li>Follow password and access control protocols.</li>
+                            <li>Report data mishandling, loss, or breaches immediately to the Data Protection Officer.</li>
+                        </ul>
+                        <p>Violations may lead to disciplinary action, including termination and legal recourse.</p>
+                    </div>
+                </div>
+
+                <!-- Data Security Controls Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Data Security Controls</h2>
+                    <div class="content-text">
+                        <p>To maintain confidentiality, integrity, and availability of data:</p>
+                        <ul>
+                            <li><strong>Access Control:</strong> Role-based access, MFA, and periodic reviews.</li>
+                            <li><strong>Encryption:</strong> AES-256 encryption at rest, TLS 1.2+ in transit.</li>
+                            <li><strong>Endpoint Protection:</strong> Anti-malware, firewalls, secure device management.</li>
+                            <li><strong>Data Monitoring:</strong> SIEM tools, audit trails, and anomaly detection.</li>
+                            <li><strong>Cloud Security:</strong> Secure cloud-based infrastructure with geo-redundancy and regular backups.</li>
+                            <li><strong>Vendor Management:</strong> Contracts include DPAs and require security audits.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Data Sharing Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Data Sharing</h2>
+                    <div class="content-text">
+                        <p>AutoSpend may share data strictly as necessary with:</p>
+                        <ul>
+                            <li>Third-party KYC/AML processors</li>
+                            <li>Payment processors and P2P providers</li>
+                            <li>Regulatory authorities and law enforcement agencies</li>
+                            <li>Cloud and infrastructure service providers (under DPA agreements)</li>
+                        </ul>
+                        <p>Third parties are contractually required to handle data securely and only for the intended purpose.</p>
+                    </div>
+                </div>
+
+                <!-- Data Retention and Disposal Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Data Retention and Disposal</h2>
+                    <div class="content-text">
+                        <ul>
+                            <li>Customer and transaction records are retained for at least 5 years post-termination or as required by law.</li>
+                            <li>Obsolete or expired data is securely destroyed using digital wiping or certified physical destruction.</li>
+                            <li>Logs of all data deletion activities are maintained.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Data Subject Rights Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Data Subject Rights</h2>
+                    <div class="content-text">
+                        <p>Data Subjects have the right to:</p>
+                        <ul>
+                            <li>Access and receive a copy of their data</li>
+                            <li>Request correction or update of inaccurate data</li>
+                            <li>Request deletion (subject to legal/regulatory obligations)</li>
+                            <li>Withdraw consent for data use not related to service provision</li>
+                            <li>File complaints to privacy regulators or Auto's Data Protection Office</li>
+                        </ul>
+                        <p>Requests will be honored within the timelines and scope defined by applicable laws.</p>
+                    </div>
+                </div>
+
+                <!-- Incident Management Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Incident Management and Breach Response</h2>
+                    <div class="content-text">
+                        <ul>
+                            <li>All data incidents will be investigated immediately.</li>
+                            <li>AutoSpend will notify affected users and regulators in accordance with applicable law.</li>
+                            <li>Remediation and corrective actions will be implemented.</li>
+                            <li>Lessons learned from incidents are incorporated into training and policy updates.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Enforcement and Review Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Enforcement and Review</h2>
+                    <div class="content-text">
+                        <ul>
+                            <li>Any employee, vendor, or partner found in violation of this policy may face sanctions, including termination or legal consequences.</li>
+                            <li>This policy is reviewed annually, or earlier in the event of legal/regulatory updates, changes in business operations, or security incident.</li>
+                        </ul>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        // Mobile navigation toggle
+        function toggleMobileNav() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('mobile-open');
+        }
+        
+        // Add click handlers for sidebar navigation
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.classList.contains('disabled')) return;
+                
+                // Don't do anything if this link is already active
+                if (this.classList.contains('active')) {
+                    // Close mobile nav on mobile after selection
+                    if (window.innerWidth <= 768) {
+                        document.getElementById('sidebar').classList.remove('mobile-open');
+                    }
+                    return;
+                }
+                
+                // Remove active class from all links
+                document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+                
+                // Add active class to clicked link
+                this.classList.add('active');
+                
+                // Close mobile nav on mobile after selection
+                if (window.innerWidth <= 768) {
+                    document.getElementById('sidebar').classList.remove('mobile-open');
+                }
+                
+                // Let the onclick handler handle navigation
+                // Don't prevent default for links with onclick handlers
+            });
+        });
+        
+        // Close mobile nav when clicking outside
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.mobile-nav-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !toggle.contains(event.target)) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    </script>
+</body>
+</html>
