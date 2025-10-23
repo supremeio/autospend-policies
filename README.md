@@ -1,10 +1,10 @@
-# Autospend Policy Design System
+# Autospend Policies
 
 A clean, component-based design system for Autospend policy pages, built with React components and HTML demo pages featuring smooth animations and responsive design.
 
 ## 🚀 Live Demo
 
-Visit the [live demo](https://supremeio.github.io/autospend-policy-design-system/design-system/demo/) to see the design system in action.
+Visit the [live demo](https://supremeio.github.io/autospend-policies/design-system/demo/) to see the design system in action.
 
 ## 🎨 Features
 
@@ -19,7 +19,7 @@ Visit the [live demo](https://supremeio.github.io/autospend-policy-design-system
 ## 📁 Repository Structure
 
 ```
-autospend-policy-design-system/
+autospend-policies/
 ├── design-system/           # Main design system
 │   ├── components/         # React components
 │   │   ├── AppHeader.jsx
@@ -157,8 +157,8 @@ Open `design-system/demo/index.html` in your browser for an interactive demo wit
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/supremeio/autospend-policy-design-system.git
-cd autospend-policy-design-system
+git clone https://github.com/supremeio/autospend-policies.git
+cd autospend-policies
 ```
 
 2. Start a local server:
