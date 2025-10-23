@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-Merchant Exchange Agreement - Autospend Policy Design System</title>
+    <style>
+        /* Import Figtree font */
+        @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #ffffff;
+        }
+        
+        /* Design Tokens */
+        :root {
+            --primary: #2a58dc;
+            --text-primary: #13212f;
+            --text-primary-subdued: #475569;
+            --text-on-primary: #ffffff;
+            --background-primary: #ffffff;
+            --background-secondary: #eaeefb;
+            --background-primary-subdued: #f3f6f8;
+            --border-primary: #e2e8f0;
+        }
+        
+        /* ===== LAYOUT ===== */
+        .policy-template {
+            background-color: var(--background-primary);
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            padding: 0;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 64px;
+            align-items: flex-start;
+            flex: 1;
+            width: 100%;
+        }
+        
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            height: 80px;
+            padding: 20px 80px;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            align-self: stretch;
+            background-color: var(--background-primary);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
+        .logo {
+            height: 24px;
+            width: 122px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        /* ===== BUTTON ===== */
+        .button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+            line-height: 1.45;
+            letter-spacing: 0.28px;
+            background-color: var(--primary);
+            color: var(--text-on-primary);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .button:hover {
+            background-color: #F3F6F8;
+            color: var(--primary);
+            transform: translateY(-1px);
+        }
+        
+        .button-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .button-icon img {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 48px;
+            width: 360px;
+            padding: 24px 0;
+            padding-left: 80px;
+            padding-right: 40px;
+            box-sizing: border-box;
+            position: fixed;
+            top: 80px;
+            left: 0;
+            bottom: 0;
+            z-index: 999;
+            background-color: var(--background-primary);
+            overflow-y: auto;
+        }
+        
+        .sidebar-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+        }
+        
+        .sidebar-heading {
+            font-family: 'Figtree', sans-serif;
+            font-weight: 600;
+            font-size: 20px;
+            line-height: 32px;
+            letter-spacing: -0.2px;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .sidebar-container {
+            border-left: 1px solid var(--border-primary);
+            padding-left: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            width: 100%;
+        }
+        
+        .sidebar-link {
+            display: flex;
+            align-items: flex-start;
+            align-self: stretch;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+            line-height: 145%;
+            letter-spacing: 0.14px;
+            font-variant-numeric: lining-nums tabular-nums;
+            font-feature-settings: 'salt' on;
+            width: 100%;
+            text-align: left;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: var(--background-primary);
+            color: #475569;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar-link.active {
+            background-color: var(--background-secondary);
+            color: var(--primary);
+            transform: translateX(4px);
+        }
+        
+        .sidebar-link.disabled {
+            background-color: #FFF;
+            color: #475569;
+            cursor: not-allowed;
+            opacity: 1;
+        }
+        
+        .sidebar-link:hover:not(.disabled) {
+            border-radius: 8px;
+            background-color: #F3F6F8;
+            transform: translateX(2px);
+            color: #2A58DC;
+        }
+        
+        /* ===== CONTENT AREA ===== */
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            padding: 40px 80px 40px 120px;
+            min-height: fit-content;
+            margin-top: 80px;
+            margin-left: 360px;
+        }
+        
+        .page-title {
+            align-self: stretch;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 500;
+            font-size: 32px;
+            line-height: 40px;
+            letter-spacing: -0.96px;
+            font-feature-settings: 'salt' on;
+            color: #13212F;
+            margin: 0;
+        }
+        
+        .content-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .content-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .section-heading {
+            align-self: stretch;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 400;
+            font-size: 20px;
+            line-height: 28px;
+            text-transform: uppercase;
+            color: #2A58DC;
+            margin: 0;
+        }
+        
+        .content-text {
+            align-self: stretch;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 400;
+            font-size: 16px;
+            line-height: 24px;
+            font-feature-settings: 'salt' on;
+            color: #475569;
+            margin: 0;
+        }
+        
+        .content-text strong {
+            color: #13212F;
+            font-weight: 600;
+            font-feature-settings: 'salt' on;
+        }
+        
+        .content-text p {
+            margin-bottom: 16px;
+        }
+        
+        .content-text p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .content-text ul {
+            padding-left: 20px;
+            margin: 16px 0;
+        }
+        
+        .content-text li {
+            margin-bottom: 8px;
+        }
+        
+        .content-text li:last-child {
+            margin-bottom: 0;
+        }
+        
+        .agreement-statement {
+            padding: 24px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            margin-top: 24px;
+        }
+        
+        .agreement-statement p {
+            margin: 0;
+            font-weight: 600;
+            color: #13212F;
+        }
+        
+        /* ===== MOBILE NAVIGATION ===== */
+        .mobile-nav-toggle {
+            display: none;
+        }
+        
+        .mobile-get-started {
+            display: none;
+        }
+        
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 1200px) {
+            .main-content {
+                gap: 40px;
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            .main-content {
+                gap: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .policy-template {
+                gap: 24px;
+                padding: 0;
+            }
+            
+            .header {
+                height: 60px;
+                padding: 16px 0;
+            }
+            
+            .main-content {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .sidebar {
+                position: fixed;
+                top: 60px;
+                left: 0;
+                right: 0;
+                width: 100%;
+                padding: 20px 16px;
+                padding-right: 0;
+                gap: 24px;
+                display: none;
+                background-color: var(--background-primary);
+                border-bottom: 1px solid var(--border-primary);
+                z-index: 1000;
+                max-height: 60vh;
+                overflow-y: auto;
+            }
+            
+            .sidebar.mobile-open {
+                display: flex;
+            }
+            
+            .mobile-nav-toggle {
+                display: block;
+                background: none;
+                border: none;
+                font-size: 18px;
+                cursor: pointer;
+                padding: 8px;
+            }
+            
+            .mobile-get-started {
+                display: block;
+                margin-top: 24px;
+                padding-top: 16px;
+                border-top: 1px solid var(--border-primary);
+            }
+            
+            .mobile-get-started .button {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            
+            .content-area {
+                padding: 20px 0;
+                gap: 24px;
+                margin-top: 60px;
+                margin-left: 0;
+            }
+            
+            .page-title {
+                font-size: 24px;
+                line-height: 32px;
+                letter-spacing: -0.72px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="policy-template">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <img src="assets/autospend-logo.svg" alt="Autospend" />
+            </div>
+            <div class="header-right">
+                <button class="button" onclick="alert('Get started for free clicked!')">
+                    <span>Get started for free</span>
+                    <div class="button-icon">
+                        <img src="assets/button-arrow-icon.svg" alt="arrow" />
+                    </div>
+                </button>
+                <button class="mobile-nav-toggle" onclick="toggleMobileNav()">☰</button>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <nav class="sidebar" id="sidebar">
+                <!-- Policies Section -->
+                <div class="sidebar-section">
+                    <h3 class="sidebar-heading">Policies</h3>
+                    <div class="sidebar-container">
+                        <button class="sidebar-link" onclick="window.location.href='index.html'">Terms and conditions</button>
+                        <button class="sidebar-link" onclick="window.location.href='cookie-policy.html'">Cookie policy</button>
+                        <button class="sidebar-link" onclick="window.location.href='data-use-policy.html'">Data use policy</button>
+                        <button class="sidebar-link active">E-marchant exchange serive agreement</button>
+                        <button class="sidebar-link" onclick="window.location.href='information-security-policy.html'">Information security policy</button>
+                        <button class="sidebar-link" onclick="window.location.href='privacy-policy.html'">Privacy policy</button>
+                        <button class="sidebar-link" onclick="window.location.href='risk-management-policy.html'">Risk management policy</button>
+                    </div>
+                </div>
+                
+                <!-- KYC Section - Hidden for now -->
+                <!-- <div class="sidebar-section">
+                    <h3 class="sidebar-heading">KYC</h3>
+                    <div class="sidebar-container">
+                        <button class="sidebar-link">Questionnaire corporate</button>
+                        <button class="sidebar-link">Questionnaire individual</button>
+                        <button class="sidebar-link">Declaration of source of funds</button>
+                        <button class="sidebar-link">KYC SOP</button>
+                    </div>
+                </div> -->
+                
+                <!-- Mobile Get Started Button -->
+                <div class="mobile-get-started">
+                    <button class="button" onclick="alert('Get started for free clicked!')">
+                        <span>Get started for free</span>
+                        <div class="button-icon">
+                            <img src="assets/button-arrow-icon.svg" alt="arrow" />
+                        </div>
+                    </button>
+                </div>
+            </nav>
+            
+            <!-- Content Area -->
+            <main class="content-area">
+                <h1 class="page-title">E-Merchant Exchange Service Agreement</h1>
+                
+                <!-- Introduction Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Introduction</h2>
+                    <div class="content-text">
+                        <p>Please read this Agreement, along with AutoSpend's Terms and Conditions and Privacy Policy carefully before accessing or using AutoSpend's Services. You may not access or use any of AutoSpend's services unless you agree to abide by all of the terms and conditions as contained in this Agreement.</p>
+                        
+                        <p>Please read the contents of this document carefully and retain this information electronically for your records</p>
+                        
+                        <p>This E-Merchant Exchange Service Agreement ("Agreement") is entered into by and between Stable Payments Inc., a U.S.-based company (hereinafter referred to as "the Company" or "AutoSpend"), and You (hereinafter referred to as "Merchant") as a user in order for You to utilize the services offered by AutoSpend and or its subsidiaries and affiliates.</p>
+                    </div>
+                </div>
+
+                <!-- Agreement Purpose Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Agreement Purpose</h2>
+                    <div class="content-text">
+                        <p>This Agreement outlines the terms and conditions under which the Merchant will use AutoSpend's platform to exchange stablecoins (USDC/USDT) for local currency and settle cross-border payments to international merchants.</p>
+                    </div>
+                </div>
+
+                <!-- Definitions Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Definitions</h2>
+                    <div class="content-text">
+                        <ul>
+                            <li><strong>Stablecoin:</strong> A digital asset pegged to the value of a fiat currency (e.g., USDC, USDT).</li>
+                            <li><strong>Exchange Platform:</strong> The platform provided by AutoSpend that enables the Merchant to exchange stablecoins for local currency via the Company's services.</li>
+                            <li><strong>Settlement:</strong> The transfer of local currency to an international merchant's bank account after conversion from stablecoins.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Merchant Obligations Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Merchant Obligations</h2>
+                    <div class="content-text">
+                        <ul>
+                            <li>The Merchant agrees to use the Company's platform exclusively for legitimate business transactions.</li>
+                            <li>The Merchant must ensure compliance with all AML, KYC, CFT and CPF regulations in the jurisdiction of operation.</li>
+                            <li>The Merchant shall not engage in the exchange or transfer of stablecoins for the purpose of any unlawful activity, including but not limited to money laundering, terrorist financing, or fraud.</li>
+                            <li>The Merchant must ensure compliance with all AML, KYC, CFT and CPF regulations in the jurisdiction of operation.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Company Obligations Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Company Obligations</h2>
+                    <div class="content-text">
+                        <ul>
+                            <li>The Company will provide a platform for converting stablecoins to local currency in real-time, using P2P platforms and its integration with payment service providers.</li>
+                            <li>The Company will ensure compliance with U.S. AML/CFT/CPF regulations and will carry out due diligence and monitoring of transactions as part of its KYC/AML processes.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Fees and Payment Terms Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Fees and Payment Terms</h2>
+                    <div class="content-text">
+                        <ul>
+                            <li>The Merchant agrees to pay the Company a transaction fee for each stablecoin exchange and conversion made through the platform. The fee structure will be as agreed upon by both parties and communicated at the time of the transaction.</li>
+                            <li>All payments to the international merchants will be processed into the local currency bank accounts as specified by the Merchant.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Compliance with Laws Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Compliance with Laws</h2>
+                    <div class="content-text">
+                        <p>The Merchant agrees to comply with all applicable local and international laws and regulations, including but not limited to AML, CFT, CPF, KYC, and any other relevant financial regulations.</p>
+                    </div>
+                </div>
+
+                <!-- Termination of Agreement Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Termination of Agreement</h2>
+                    <div class="content-text">
+                        <p>Either party may terminate this Agreement with 30 days' notice. In the event of termination, all pending transactions must be completed, and the Merchant's account will be closed.</p>
+                    </div>
+                </div>
+
+                <!-- Fraud Complaints and Chargebacks Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Fraud Complaints and Chargebacks</h2>
+                    <div class="content-text">
+                        <p>In the event of any fraud complaint, suspected unauthorized transaction, or chargeback initiated by a customer, bank, payment service provider, or regulatory authority, AutoSpend reserves the right to immediately investigate and take appropriate action.</p>
+                        
+                        <p>The Merchant agrees to cooperate fully in any investigation, including but not limited to providing transaction records, identification documents, customer communication logs, and other requested documentation.</p>
+                        
+                        <p>If AutoSpend, in its sole discretion, determines that a transaction is fraudulent, violates applicable law, or breaches this Agreement, Auto may:</p>
+                        <ul>
+                            <li>Reverse or cancel the transaction in question;</li>
+                            <li>Place a lien or hold on the Merchant's funds (whether in process, escrow, or due for settlement);</li>
+                            <li>Delay or withhold payouts to the Merchant;</li>
+                            <li>Deduct chargeback-related losses, fees, or penalties from any funds held or future settlements;</li>
+                            <li>Suspend or terminate the Merchant's access to the platform;</li>
+                            <li>Report the incident to relevant regulatory or law enforcement authorities.</li>
+                        </ul>
+                        
+                        <p>The Merchant shall be solely responsible for all losses, penalties, and liabilities arising from fraudulent activity or chargebacks involving its account, and AutoSpend shall not be liable for any resulting loss of business, profit, or goodwill.</p>
+                    </div>
+                </div>
+
+                <!-- Liability and Indemnity Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Liability and Indemnity</h2>
+                    <div class="content-text">
+                        <p>The Merchant agrees to indemnify and hold the Company harmless against any claims, losses, or damages arising from the Merchant's use of the platform in violation of the terms and conditions of this Agreement.</p>
+                    </div>
+                </div>
+
+                <!-- Limitation of Liability Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Limitation of Liability</h2>
+                    <div class="content-text">
+                        <p>The Company shall not be held liable for any indirect, incidental, or consequential damages arising from the Merchant's use of the platform, including but not limited to loss of profit, loss of data, or service interruptions.</p>
+                    </div>
+                </div>
+
+                <!-- Governing Law Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Governing Law and Dispute Resolution</h2>
+                    <div class="content-text">
+                        <p>This Agreement shall be governed by the laws of the United States of America. Any dispute arising from this Agreement will be resolved through arbitration in the jurisdiction of the Company's registered office.</p>
+                    </div>
+                </div>
+
+                <!-- Miscellaneous Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Miscellaneous</h2>
+                    <div class="content-text">
+                        <ul>
+                            <li><strong>Amendments:</strong> This Agreement may be amended only in writing and signed by both parties.</li>
+                            <li><strong>Entire Agreement:</strong> This Agreement constitutes the entire agreement between the parties with respect to the subject matter and supersedes all prior agreements.</li>
+                        </ul>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        // Mobile navigation toggle
+        function toggleMobileNav() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('mobile-open');
+        }
+        
+        // Add click handlers for sidebar navigation
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.classList.contains('disabled')) return;
+                
+                // Don't do anything if this link is already active
+                if (this.classList.contains('active')) {
+                    // Close mobile nav on mobile after selection
+                    if (window.innerWidth <= 768) {
+                        document.getElementById('sidebar').classList.remove('mobile-open');
+                    }
+                    return;
+                }
+                
+                // Remove active class from all links
+                document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+                
+                // Add active class to clicked link
+                this.classList.add('active');
+                
+                // Close mobile nav on mobile after selection
+                if (window.innerWidth <= 768) {
+                    document.getElementById('sidebar').classList.remove('mobile-open');
+                }
+                
+                // Let the onclick handler handle navigation
+                // Don't prevent default for links with onclick handlers
+            });
+        });
+        
+        // Close mobile nav when clicking outside
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.mobile-nav-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !toggle.contains(event.target)) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    </script>
+</body>
+</html>

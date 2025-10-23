@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autospend Policy Design System Demo</title>
+    <style>
+        /* Import Figtree font */
+        @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #ffffff;
+        }
+        
+        /* Design Tokens */
+        :root {
+            --primary: #2a58dc;
+            --text-primary: #13212f;
+            --text-primary-subdued: #475569;
+            --text-on-primary: #ffffff;
+            --background-primary: #ffffff;
+            --background-secondary: #eaeefb;
+            --background-primary-subdued: #f3f6f8;
+            --border-primary: #e2e8f0;
+        }
+        
+        /* ===== LAYOUT ===== */
+        .policy-template {
+            background-color: var(--background-primary);
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            padding: 0;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 64px;
+            align-items: flex-start;
+            flex: 1;
+            width: 100%;
+        }
+        
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            height: 80px;
+            padding: 20px 80px;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            align-self: stretch;
+            background-color: var(--background-primary);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
+        .logo {
+            height: 24px;
+            width: 122px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        /* ===== BUTTON ===== */
+        .button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+            line-height: 1.45;
+            letter-spacing: 0.28px;
+            background-color: var(--primary);
+            color: var(--text-on-primary);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .button:hover {
+            background-color: #F3F6F8;
+            color: var(--primary);
+            transform: translateY(-1px);
+        }
+        
+        .button-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .button-icon img {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 48px;
+            width: 360px;
+            padding: 24px 0;
+            padding-left: 80px;
+            padding-right: 40px;
+            box-sizing: border-box;
+            position: fixed;
+            top: 80px;
+            left: 0;
+            bottom: 0;
+            z-index: 999;
+            background-color: var(--background-primary);
+            overflow-y: auto;
+        }
+        
+        .sidebar-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .sidebar-heading {
+            font-family: 'Figtree', sans-serif;
+            font-weight: 600;
+            font-size: 20px;
+            line-height: 32px;
+            letter-spacing: -0.2px;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .sidebar-container {
+            border-left: 1px solid var(--border-primary);
+            padding-left: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            width: 100%;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .sidebar-link {
+            display: flex;
+            align-items: flex-start;
+            align-self: stretch;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+            line-height: 145%;
+            letter-spacing: 0.14px;
+            font-variant-numeric: lining-nums tabular-nums;
+            font-feature-settings: 'salt' on;
+            width: 100%;
+            text-align: left;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: var(--background-primary);
+            color: #475569;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar-link.active {
+            background-color: var(--background-secondary);
+            color: var(--primary);
+            transform: translateX(4px);
+        }
+        
+        .sidebar-link.disabled {
+            background-color: #FFF;
+            color: #475569;
+            cursor: not-allowed;
+            opacity: 1;
+        }
+        
+        .sidebar-link:hover:not(.disabled) {
+            border-radius: 8px;
+            background-color: #F3F6F8;
+            transform: translateX(2px);
+            color: #2A58DC;
+        }
+        
+        /* ===== CONTENT AREA ===== */
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            padding: 40px 80px 40px 120px;
+            min-height: fit-content;
+            margin-top: 80px;
+            margin-left: 360px;
+        }
+        
+        .page-title {
+            align-self: stretch;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 500;
+            font-size: 32px;
+            line-height: 40px;
+            letter-spacing: -0.96px;
+            font-feature-settings: 'salt' on;
+            color: #13212F;
+            margin: 0;
+        }
+        
+        .content-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .content-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .section-heading {
+            align-self: stretch;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 400;
+            font-size: 20px;
+            line-height: 28px;
+            text-transform: uppercase;
+            color: #2A58DC;
+            margin: 0;
+        }
+        
+        .content-text {
+            align-self: stretch;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 400;
+            font-size: 16px;
+            line-height: 24px;
+            font-feature-settings: 'salt' on;
+            color: #475569;
+            margin: 0;
+        }
+        
+        .content-text strong {
+            color: #13212F;
+            font-weight: 600;
+            font-feature-settings: 'salt' on;
+        }
+        
+        .content-text p {
+            margin-bottom: 16px;
+        }
+        
+        .content-text p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .content-text ul {
+            padding-left: 20px;
+            margin: 16px 0;
+        }
+        
+        .content-text li {
+            margin-bottom: 8px;
+        }
+        
+        .content-text li:last-child {
+            margin-bottom: 0;
+        }
+        
+        .agreement-statement {
+            padding: 24px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            margin-top: 24px;
+        }
+        
+        .agreement-statement p {
+            margin: 0;
+            font-weight: 600;
+            color: #13212F;
+        }
+        
+        /* ===== MOBILE NAVIGATION ===== */
+        .mobile-nav-toggle {
+            display: none;
+        }
+        
+        .mobile-get-started {
+            display: none;
+        }
+        
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 1200px) {
+            .main-content {
+                gap: 40px;
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            .main-content {
+                gap: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .policy-template {
+                gap: 24px;
+                padding: 0;
+            }
+            
+            .header {
+                height: 60px;
+                padding: 16px 0;
+            }
+            
+            .main-content {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .sidebar {
+                position: fixed;
+                top: 60px;
+                left: 0;
+                right: 0;
+                width: 100%;
+                padding: 20px 16px;
+                padding-right: 0;
+                gap: 24px;
+                display: none;
+                background-color: var(--background-primary);
+                border-bottom: 1px solid var(--border-primary);
+                z-index: 1000;
+                max-height: 60vh;
+                overflow-y: auto;
+            }
+            
+            .sidebar.mobile-open {
+                display: flex;
+                animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            .content-area {
+                animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            .mobile-nav-toggle {
+                display: block;
+                background: none;
+                border: none;
+                font-size: 18px;
+                cursor: pointer;
+                padding: 8px;
+            }
+            
+            .mobile-get-started {
+                display: block;
+                margin-top: 24px;
+                padding-top: 16px;
+                border-top: 1px solid var(--border-primary);
+            }
+            
+            .mobile-get-started .button {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            
+            .content-area {
+                padding: 20px 0;
+                gap: 24px;
+                margin-top: 60px;
+                margin-left: 0;
+            }
+            
+            .page-title {
+                font-size: 24px;
+                line-height: 32px;
+                letter-spacing: -0.72px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="policy-template">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <img src="assets/autospend-logo.svg" alt="Autospend" />
+            </div>
+            <div class="header-right">
+                <button class="button" onclick="alert('Get started for free clicked!')">
+                    <span>Get started for free</span>
+                    <div class="button-icon">
+                        <img src="assets/button-arrow-icon.svg" alt="arrow" />
+                    </div>
+                </button>
+                <button class="mobile-nav-toggle" onclick="toggleMobileNav()">☰</button>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <nav class="sidebar" id="sidebar">
+                <!-- Policies Section -->
+                <div class="sidebar-section">
+                    <h3 class="sidebar-heading">Policies</h3>
+                    <div class="sidebar-container">
+                        <button class="sidebar-link active">Terms and conditions</button>
+                        <button class="sidebar-link" onclick="window.location.href='cookie-policy.html'">Cookie policy</button>
+                        <button class="sidebar-link" onclick="window.location.href='data-use-policy.html'">Data use policy</button>
+                        <button class="sidebar-link" onclick="window.location.href='e-merchant-agreement.html'">E-marchant exchange serive agreement</button>
+                        <button class="sidebar-link" onclick="window.location.href='information-security-policy.html'">Information security policy</button>
+                        <button class="sidebar-link" onclick="window.location.href='privacy-policy.html'">Privacy policy</button>
+                        <button class="sidebar-link" onclick="window.location.href='risk-management-policy.html'">Risk management policy</button>
+                    </div>
+                </div>
+                
+                <!-- KYC Section - Hidden for now -->
+                <!-- <div class="sidebar-section">
+                    <h3 class="sidebar-heading">KYC</h3>
+                    <div class="sidebar-container">
+                        <button class="sidebar-link">Questionnaire corporate</button>
+                        <button class="sidebar-link">Questionnaire individual</button>
+                        <button class="sidebar-link">Declaration of source of funds</button>
+                        <button class="sidebar-link">KYC SOP</button>
+                    </div>
+                </div> -->
+                
+                <!-- Mobile Get Started Button -->
+                <div class="mobile-get-started">
+                    <button class="button" onclick="alert('Get started for free clicked!')">
+                        <span>Get started for free</span>
+                        <div class="button-icon">
+                            <img src="assets/button-arrow-icon.svg" alt="arrow" />
+                        </div>
+                    </button>
+                </div>
+            </nav>
+            
+            <!-- Content Area -->
+            <main class="content-area">
+                <h1 class="page-title">Terms and condition</h1>
+                
+                <!-- Introduction Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Introduction</h2>
+                    <div class="content-text">
+                        <p>Welcome to the website of <strong>Stable Payments Inc</strong>. (hereinafter referred to as "AutoSpend", "we", "our", or "us"). These Terms and Conditions ("Terms") govern your access to and use of our website, platform, and services. By accessing or using our website and services, you agree to be bound by these Terms.</p>
+                        
+                        <p><strong>Stable Payments Inc.</strong> is a company registered in the United States and operates under the trade name "<strong>AutoSpend</strong>". The Company is duly registered and licensed as a <strong>Money Services Business (MSB)</strong> with the <strong>U.S. Department of the Treasury's Financial Crimes Enforcement Network (FinCEN)</strong> under registration number 31000293212574.</p>
+                        
+                        <p>Please read these Terms carefully before using our website or services. If you do not agree with any part of these Terms, you must not access or use the site or any services provided by AutoSpend.</p>
+                    </div>
+                </div>
+
+                <!-- Definitions Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Definitions</h2>
+                    <div class="content-text">
+                        <p><strong>"Company"</strong> refers to Stable Payments Inc., registered in the United States.</p>
+                        <p><strong>"User"</strong> refers to any individual or entity accessing our website or services.</p>
+                        <p><strong>"Services"</strong> include our cross-border payment solutions utilizing stablecoins (USDC, USDT).</p>
+                        <p><strong>"Content"</strong> refers to text, graphics, data, software, and other material provided on the website.</p>
+                    </div>
+                </div>
+
+                <!-- User Eligibility Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">User Eligibility</h2>
+                    <div class="content-text">
+                        <p>By using the AutoSpend platform, you affirm that you are:</p>
+                        <ul>
+                            <li>At least 18 years of age (or the legal age of majority in your jurisdiction);</li>
+                            <li>Capable of entering into a legally binding agreement;</li>
+                            <li>Not barred from using our services under applicable laws.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Services Provided Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Services Provided</h2>
+                    <div class="content-text">
+                        <p>AutoSpend is a technology platform, not a bank. Financial services provided through AutoSpend may be facilitated by third-party licensed financial institutions.</p>
+                        
+                        <p>AutoSpend provides cross-border business-to-business (B2B) payment services using stablecoins such as USDC and USDT as a means of exchange. Users can convert their local currencies into stablecoins to settle international merchants, who then receive funds in their local bank accounts via integrated P2P off-ramping solutions.</p>
+                        
+                        <p>Use of AutoSpend's services is subject to additional legal agreements, including our:</p>
+                        <ul>
+                            <li>Risk Management Policy</li>
+                            <li>AML/CFT/CPF Policy</li>
+                            <li>KYC/KYCB Policy</li>
+                            <li>Merchant Exchange Agreement</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Use of Services Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Use of Services</h2>
+                    <div class="content-text">
+                        <p>You agree to:</p>
+                        <ul>
+                            <li>Use our services only for lawful purposes.</li>
+                            <li>Provide accurate and up-to-date information during registration.</li>
+                            <li>Not engage in fraudulent, abusive, or illegal activities.</li>
+                            <li>Not attempt to hack, exploit, or interfere with our systems.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Account Registration and Security Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Account Registration and Security</h2>
+                    <div class="content-text">
+                        <ul>
+                            <li>Users must create an account to access certain features.</li>
+                            <li>You are responsible for maintaining the confidentiality of your account credentials.</li>
+                            <li>Any unauthorized use of your account must be reported to us immediately.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Payment Transactions Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Payment Transactions</h2>
+                    <div class="content-text">
+                        <ul>
+                            <li>Our platform facilitates B2B cross-border transactions using stablecoins (USDC, USDT).</li>
+                            <li>Payments must comply with AML/CFT/CPF regulations, KYC/KYCB policies, and U.S. federal and state laws.</li>
+                            <li>We reserve the right to reject, suspend, or delay transactions suspected of fraud or illicit activity.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Fees and Charges Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Fees and Charges</h2>
+                    <div class="content-text">
+                        <ul>
+                            <li>Users may be subject to transaction fees, conversion fees, and network fees.</li>
+                            <li>Fee structures will be disclosed before transaction execution.</li>
+                            <li>We reserve the right to adjust fees with prior notice.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Compliance with Laws Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Compliance with Laws</h2>
+                    <div class="content-text">
+                        <p>You agree to comply with all applicable laws and regulations, including but not limited to U.S. laws, international AML/CFT obligations, and sanctions enforced by OFAC, FinCEN, and other relevant authorities. AutoSpend reserves the right to report suspicious activity to appropriate law enforcement and regulatory bodies.</p>
+                    </div>
+                </div>
+
+                <!-- Prohibited Activities Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Prohibited Activities</h2>
+                    <div class="content-text">
+                        <p>Users may not use AutoSpend to:</p>
+                        <ul>
+                            <li>Violate any law or regulation;</li>
+                            <li>Engage in fraudulent, deceptive, or illegal activity;</li>
+                            <li>Facilitate money laundering, terrorist financing, or proliferation financing;</li>
+                            <li>Violate U.S. sanctions or deal with sanctioned entities;</li>
+                            <li>Attempt to access systems or data not intended for you.</li>
+                        </ul>
+                        <p>AutoSpend reserves the right to investigate and take appropriate legal action against any misuse of the platform.</p>
+                    </div>
+                </div>
+
+                <!-- Fraud Complaints and Chargebacks Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Fraud Complaints and Chargebacks</h2>
+                    <div class="content-text">
+                        <p>In the event of a complaint involving fraud, unauthorized transactions, or a chargeback initiated by a User or a third-party financial institution, AutoSpend reserves the right to investigate the claim thoroughly. Users are required to cooperate fully with such investigations and provide all relevant information and documentation upon request.</p>
+                        
+                        <p>If AutoSpend determines, in its sole discretion, that a transaction is fraudulent, violates applicable laws, or breaches these Terms, the Company may take any or all of the following actions:</p>
+                        <ul>
+                            <li>Reverse or cancel the transaction in question;</li>
+                            <li>Place a lien or hold on the User's funds (either in part or in full) that are in custody or under processing, pending resolution of the complaint;</li>
+                            <li>Withhold disbursement to the User or related parties until the matter is resolved;</li>
+                            <li>Deduct amounts from current or future settlements to cover the chargeback or related losses;</li>
+                            <li>Report the incident to relevant regulatory or law enforcement authorities.</li>
+                        </ul>
+                        <p>AutoSpend also reserves the right to suspend or terminate the User's access to the platform if it reasonably suspects fraud, abuse, or high chargeback risk, with or without prior notice.</p>
+                    </div>
+                </div>
+
+                <!-- Intellectual Property Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Intellectual Property</h2>
+                    <div class="content-text">
+                        <ul>
+                            <li>All content, trademarks, and intellectual property on this website are owned by Stable Payment Inc.</li>
+                            <li>Users may not copy, reproduce, or distribute content without authorization.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Disclaimer of Warranties Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Disclaimer of Warranties</h2>
+                    <div class="content-text">
+                        <p>AutoSpend provides its services on an "as is" and "as available" basis. We do not warrant that the services will be uninterrupted, error-free, or secure. To the fullest extent permitted by law, AutoSpend disclaims all warranties, express or implied.</p>
+                    </div>
+                </div>
+
+                <!-- Limitation of Liability Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Limitation of Liability</h2>
+                    <div class="content-text">
+                        <p>Stable Payments Inc. is not liable for:</p>
+                        <ul>
+                            <li>Any indirect, incidental, special, or consequential damages arising out of or in connection with your use of the services, to the maximum extent permitted by applicable law.</li>
+                            <li>Financial losses due to user errors or mismanagement of private keys.</li>
+                            <li>Service interruptions caused by third-party providers.</li>
+                            <li>Unauthorized access to user accounts due to negligence.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Indemnification Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Indemnification</h2>
+                    <div class="content-text">
+                        <p>You agree to indemnify and hold harmless AutoSpend, its affiliates, officers, directors, employees, and agents from any claim or demand arising out of your violation of these Terms or applicable law.</p>
+                    </div>
+                </div>
+
+                <!-- Termination Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Termination</h2>
+                    <div class="content-text">
+                        <p>AutoSpend may suspend or terminate your access to the platform at any time without notice if you violate these Terms or engage in activities that may harm AutoSpend or its users.</p>
+                    </div>
+                </div>
+
+                <!-- Privacy and Data Protection Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Privacy and Data Protection</h2>
+                    <div class="content-text">
+                        <ul>
+                            <li>We collect, store, and process user data per our Privacy Policy.</li>
+                            <li>Personal data is protected under U.S. privacy laws (CCPA, GDPR where applicable).</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Dispute Resolution Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Dispute Resolution</h2>
+                    <div class="content-text">
+                        <ul>
+                            <li>Any disputes arising from these Terms shall be resolved through arbitration in accordance with U.S. laws.</li>
+                            <li>Users waive their right to class-action lawsuits.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Changes to Terms Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Changes to Terms</h2>
+                    <div class="content-text">
+                        <p>We reserve the right to modify these Terms at any time. Continued use of our services constitutes acceptance of the updated Terms.</p>
+                    </div>
+                </div>
+
+                <!-- Contact Information Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Contact Information</h2>
+                    <div class="content-text">
+                        <p>For inquiries, contact us at: <strong>Hi@autospend.ai</strong></p>
+                    </div>
+                </div>
+
+                <!-- Governing Law Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Governing Law</h2>
+                    <div class="content-text">
+                        <p>These Terms are governed by and construed in accordance with the laws of the State of Delaware, United States, without regard to its conflict of law principles.</p>
+                    </div>
+                </div>
+
+                <!-- Agreement Statement -->
+                <div class="agreement-statement">
+                    <p><strong>By using our website, you acknowledge that you have read and agreed to these Terms and Conditions.</strong></p>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        // Mobile navigation toggle
+        function toggleMobileNav() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('mobile-open');
+        }
+        
+        // Add click handlers for sidebar navigation
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.classList.contains('disabled')) return;
+                
+                // Don't do anything if this link is already active
+                if (this.classList.contains('active')) {
+                    // Close mobile nav on mobile after selection
+                    if (window.innerWidth <= 768) {
+                        document.getElementById('sidebar').classList.remove('mobile-open');
+                    }
+                    return;
+                }
+                
+                // Remove active class from all links
+                document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+                
+                // Add active class to clicked link
+                this.classList.add('active');
+                
+                // Close mobile nav on mobile after selection
+                if (window.innerWidth <= 768) {
+                    document.getElementById('sidebar').classList.remove('mobile-open');
+                }
+                
+                // Let the onclick handler handle navigation
+                // Don't prevent default for links with onclick handlers
+            });
+        });
+        
+        // Close mobile nav when clicking outside
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.mobile-nav-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !toggle.contains(event.target)) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    </script>
+</body>
+</html>

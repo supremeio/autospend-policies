@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Policy - Autospend Policy Design System</title>
+    <style>
+        /* Import Figtree font */
+        @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #ffffff;
+        }
+        
+        /* Design Tokens */
+        :root {
+            --primary: #2a58dc;
+            --text-primary: #13212f;
+            --text-primary-subdued: #475569;
+            --text-on-primary: #ffffff;
+            --background-primary: #ffffff;
+            --background-secondary: #eaeefb;
+            --background-primary-subdued: #f3f6f8;
+            --border-primary: #e2e8f0;
+        }
+        
+        /* ===== LAYOUT ===== */
+        .policy-template {
+            background-color: var(--background-primary);
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            padding: 0;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 64px;
+            align-items: flex-start;
+            flex: 1;
+            width: 100%;
+        }
+        
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            height: 80px;
+            padding: 20px 80px;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            align-self: stretch;
+            background-color: var(--background-primary);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
+        .logo {
+            height: 24px;
+            width: 122px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        /* ===== BUTTON ===== */
+        .button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+            line-height: 1.45;
+            letter-spacing: 0.28px;
+            background-color: var(--primary);
+            color: var(--text-on-primary);
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .button:hover {
+            background-color: #F3F6F8;
+            color: var(--primary);
+        }
+        
+        .button-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .button-icon img {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 48px;
+            width: 360px;
+            padding: 24px 0;
+            padding-left: 80px;
+            padding-right: 40px;
+            box-sizing: border-box;
+            position: fixed;
+            top: 80px;
+            left: 0;
+            bottom: 0;
+            z-index: 999;
+            background-color: var(--background-primary);
+            overflow-y: auto;
+        }
+        
+        .sidebar-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+        }
+        
+        .sidebar-heading {
+            font-family: 'Figtree', sans-serif;
+            font-weight: 600;
+            font-size: 20px;
+            line-height: 32px;
+            letter-spacing: -0.2px;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .sidebar-container {
+            border-left: 1px solid var(--border-primary);
+            padding-left: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            width: 100%;
+        }
+        
+        .sidebar-link {
+            display: flex;
+            align-items: flex-start;
+            align-self: stretch;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+            line-height: 145%;
+            letter-spacing: 0.14px;
+            font-variant-numeric: lining-nums tabular-nums;
+            font-feature-settings: 'salt' on;
+            width: 100%;
+            text-align: left;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: var(--background-primary);
+            color: #475569;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar-link.active {
+            background-color: var(--background-secondary);
+            color: var(--primary);
+            transform: translateX(4px);
+        }
+        
+        .sidebar-link.disabled {
+            background-color: #FFF;
+            color: #475569;
+            cursor: not-allowed;
+            opacity: 1;
+        }
+        
+        .sidebar-link:hover:not(.disabled) {
+            border-radius: 8px;
+            background-color: #F3F6F8;
+            transform: translateX(2px);
+            color: #2A58DC;
+        }
+        
+        /* ===== CONTENT AREA ===== */
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            padding: 40px 80px 40px 120px;
+            min-height: fit-content;
+            margin-top: 80px;
+            margin-left: 360px;
+        }
+        
+        .page-title {
+            align-self: stretch;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 500;
+            font-size: 32px;
+            line-height: 40px;
+            letter-spacing: -0.96px;
+            font-feature-settings: 'salt' on;
+            color: #13212F;
+            margin: 0;
+        }
+        
+        .content-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .content-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .section-heading {
+            align-self: stretch;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 400;
+            font-size: 20px;
+            line-height: 28px;
+            text-transform: uppercase;
+            color: #2A58DC;
+            margin: 0;
+        }
+        
+        .content-text {
+            align-self: stretch;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 400;
+            font-size: 16px;
+            line-height: 24px;
+            font-feature-settings: 'salt' on;
+            color: #475569;
+            margin: 0;
+        }
+        
+        .content-text strong {
+            color: #13212F;
+            font-weight: 600;
+            font-feature-settings: 'salt' on;
+        }
+        
+        .content-text p {
+            margin-bottom: 16px;
+        }
+        
+        .content-text p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .content-text ul {
+            padding-left: 20px;
+            margin: 16px 0;
+        }
+        
+        .content-text li {
+            margin-bottom: 8px;
+        }
+        
+        .content-text li:last-child {
+            margin-bottom: 0;
+        }
+        
+        .agreement-statement {
+            padding: 24px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            margin-top: 24px;
+        }
+        
+        .agreement-statement p {
+            margin: 0;
+            font-weight: 600;
+            color: #13212F;
+        }
+        
+        /* ===== MOBILE NAVIGATION ===== */
+        .mobile-nav-toggle {
+            display: none;
+        }
+        
+        .mobile-get-started {
+            display: none;
+        }
+        
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 1200px) {
+            .main-content {
+                gap: 40px;
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            .main-content {
+                gap: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .policy-template {
+                gap: 24px;
+                padding: 0;
+            }
+            
+            .header {
+                height: 60px;
+                padding: 16px 0;
+            }
+            
+            .main-content {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .sidebar {
+                position: fixed;
+                top: 60px;
+                left: 0;
+                right: 0;
+                width: 100%;
+                padding: 20px 16px;
+                padding-right: 0;
+                gap: 24px;
+                display: none;
+                background-color: var(--background-primary);
+                border-bottom: 1px solid var(--border-primary);
+                z-index: 1000;
+                max-height: 60vh;
+                overflow-y: auto;
+            }
+            
+            .sidebar.mobile-open {
+                display: flex;
+            }
+            
+            .mobile-nav-toggle {
+                display: block;
+                background: none;
+                border: none;
+                font-size: 18px;
+                cursor: pointer;
+                padding: 8px;
+            }
+            
+            .mobile-get-started {
+                display: block;
+                margin-top: 24px;
+                padding-top: 16px;
+                border-top: 1px solid var(--border-primary);
+            }
+            
+            .mobile-get-started .button {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            
+            .content-area {
+                padding: 20px 0;
+                gap: 24px;
+                margin-top: 60px;
+                margin-left: 0;
+            }
+            
+            .page-title {
+                font-size: 24px;
+                line-height: 32px;
+                letter-spacing: -0.72px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="policy-template">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <img src="assets/autospend-logo.svg" alt="Autospend" />
+            </div>
+            <div class="header-right">
+                <button class="button" onclick="alert('Get started for free clicked!')">
+                    <span>Get started for free</span>
+                    <div class="button-icon">
+                        <img src="assets/button-arrow-icon.svg" alt="arrow" />
+                    </div>
+                </button>
+                <button class="mobile-nav-toggle" onclick="toggleMobileNav()">☰</button>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <nav class="sidebar" id="sidebar">
+                <!-- Policies Section -->
+                <div class="sidebar-section">
+                    <h3 class="sidebar-heading">Policies</h3>
+                    <div class="sidebar-container">
+                        <button class="sidebar-link" onclick="window.location.href='index.html'">Terms and conditions</button>
+                        <button class="sidebar-link active">Cookie policy</button>
+                        <button class="sidebar-link" onclick="window.location.href='data-use-policy.html'">Data use policy</button>
+                        <button class="sidebar-link" onclick="window.location.href='e-merchant-agreement.html'">E-marchant exchange serive agreement</button>
+                        <button class="sidebar-link" onclick="window.location.href='information-security-policy.html'">Information security policy</button>
+                        <button class="sidebar-link" onclick="window.location.href='privacy-policy.html'">Privacy policy</button>
+                        <button class="sidebar-link" onclick="window.location.href='risk-management-policy.html'">Risk management policy</button>
+                    </div>
+                </div>
+                
+                <!-- KYC Section - Hidden for now -->
+                <!-- <div class="sidebar-section">
+                    <h3 class="sidebar-heading">KYC</h3>
+                    <div class="sidebar-container">
+                        <button class="sidebar-link">Questionnaire corporate</button>
+                        <button class="sidebar-link">Questionnaire individual</button>
+                        <button class="sidebar-link">Declaration of source of funds</button>
+                        <button class="sidebar-link">KYC SOP</button>
+                    </div>
+                </div> -->
+                
+                <!-- Mobile Get Started Button -->
+                <div class="mobile-get-started">
+                    <button class="button" onclick="alert('Get started for free clicked!')">
+                        <span>Get started for free</span>
+                        <div class="button-icon">
+                            <img src="assets/button-arrow-icon.svg" alt="arrow" />
+                        </div>
+                    </button>
+                </div>
+            </nav>
+            
+            <!-- Content Area -->
+            <main class="content-area">
+                <h1 class="page-title">Cookie Policy</h1>
+                
+                <!-- Introduction Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Introduction</h2>
+                    <div class="content-text">
+                        <p>Stable Payments Inc. ("AutoSpend", "we", "our", or "us") uses cookies and similar tracking technologies on our website to enhance user experience, analyze traffic, and provide personalized content. This Cookie Policy explains how we use cookies and your choices regarding their use.</p>
+                    </div>
+                </div>
+
+                <!-- What Are Cookies Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">What Are Cookies?</h2>
+                    <div class="content-text">
+                        <p>Cookies are small text files stored on your device when you visit a website. They help us improve our site functionality, security, and user experience.</p>
+                    </div>
+                </div>
+
+                <!-- Types of Cookies Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Types of Cookies We Use</h2>
+                    <div class="content-text">
+                        <p><strong>Essential Cookies:</strong> Necessary for website operation. (e.g., session authentication)</p>
+                        <ul>
+                            <li><strong>Analytics Cookies:</strong> Help us understand website traffic (e.g., Google Analytics).</li>
+                            <li><strong>Functional Cookies:</strong> Enhance user experience (e.g., remembering login details).</li>
+                            <li><strong>Advertising Cookies:</strong> Used to deliver relevant ads based on browsing history.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- How to Manage Cookies Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">How to Manage Cookies</h2>
+                    <div class="content-text">
+                        <p>You can control or disable cookies through your browser settings. However, disabling essential cookies may affect website functionality.</p>
+                    </div>
+                </div>
+
+                <!-- Third-Party Cookies Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Third-Party Cookies</h2>
+                    <div class="content-text">
+                        <p>Some third parties (e.g., payment providers, analytics tools) may use cookies on our site. We do not control these cookies.</p>
+                    </div>
+                </div>
+
+                <!-- Updates to This Policy Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Updates to This Policy</h2>
+                    <div class="content-text">
+                        <p>We may update this policy periodically. Changes will be posted on this page with a revised "Last Updated" date.</p>
+                    </div>
+                </div>
+
+                <!-- Contact Us Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Contact Us</h2>
+                    <div class="content-text">
+                        <p>For any questions about this Cookie Policy, contact us at <strong>hi@autospend.ai</strong></p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        // Mobile navigation toggle
+        function toggleMobileNav() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('mobile-open');
+        }
+        
+        // Add click handlers for sidebar navigation
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.classList.contains('disabled')) return;
+                
+                // Don't do anything if this link is already active
+                if (this.classList.contains('active')) {
+                    // Close mobile nav on mobile after selection
+                    if (window.innerWidth <= 768) {
+                        document.getElementById('sidebar').classList.remove('mobile-open');
+                    }
+                    return;
+                }
+                
+                // Remove active class from all links
+                document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+                
+                // Add active class to clicked link
+                this.classList.add('active');
+                
+                // Close mobile nav on mobile after selection
+                if (window.innerWidth <= 768) {
+                    document.getElementById('sidebar').classList.remove('mobile-open');
+                }
+                
+                // Let the onclick handler handle navigation
+                // Don't prevent default for links with onclick handlers
+            });
+        });
+        
+        // Close mobile nav when clicking outside
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.mobile-nav-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !toggle.contains(event.target)) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    </script>
+</body>
+</html>

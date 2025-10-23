@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Risk Management Policy - Autospend Policy Design System</title>
+    <style>
+        /* Import Figtree font */
+        @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #ffffff;
+        }
+        
+        /* Design Tokens */
+        :root {
+            --primary: #2a58dc;
+            --text-primary: #13212f;
+            --text-primary-subdued: #475569;
+            --text-on-primary: #ffffff;
+            --background-primary: #ffffff;
+            --background-secondary: #eaeefb;
+            --background-primary-subdued: #f3f6f8;
+            --border-primary: #e2e8f0;
+        }
+        
+        /* ===== LAYOUT ===== */
+        .policy-template {
+            background-color: var(--background-primary);
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            padding: 0;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        .main-content {
+            display: flex;
+            gap: 64px;
+            align-items: flex-start;
+            flex: 1;
+            width: 100%;
+        }
+        
+        /* ===== HEADER ===== */
+        .header {
+            display: flex;
+            height: 80px;
+            padding: 20px 80px;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            align-self: stretch;
+            background-color: var(--background-primary);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+        }
+        
+        .logo {
+            height: 24px;
+            width: 122px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        /* ===== BUTTON ===== */
+        .button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 500;
+            font-size: 14px;
+            line-height: 1.45;
+            letter-spacing: 0.28px;
+            background-color: var(--primary);
+            color: var(--text-on-primary);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .button:hover {
+            background-color: #F3F6F8;
+            color: var(--primary);
+            transform: translateY(-1px);
+        }
+        
+        .button-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .button-icon img {
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 48px;
+            width: 360px;
+            padding: 24px 0;
+            padding-left: 80px;
+            padding-right: 40px;
+            box-sizing: border-box;
+            position: fixed;
+            top: 80px;
+            left: 0;
+            bottom: 0;
+            z-index: 999;
+            background-color: var(--background-primary);
+            overflow-y: auto;
+        }
+        
+        .sidebar-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+        }
+        
+        .sidebar-heading {
+            font-family: 'Figtree', sans-serif;
+            font-weight: 600;
+            font-size: 20px;
+            line-height: 32px;
+            letter-spacing: -0.2px;
+            color: var(--text-primary);
+            margin: 0;
+        }
+        
+        .sidebar-container {
+            border-left: 1px solid var(--border-primary);
+            padding-left: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            width: 100%;
+        }
+        
+        .sidebar-link {
+            display: flex;
+            align-items: flex-start;
+            align-self: stretch;
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 400;
+            font-size: 14px;
+            line-height: 145%;
+            letter-spacing: 0.14px;
+            font-variant-numeric: lining-nums tabular-nums;
+            font-feature-settings: 'salt' on;
+            width: 100%;
+            text-align: left;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: var(--background-primary);
+            color: #475569;
+            white-space: normal;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar-link.active {
+            background-color: var(--background-secondary);
+            color: var(--primary);
+            transform: translateX(4px);
+        }
+        
+        .sidebar-link.disabled {
+            background-color: #FFF;
+            color: #475569;
+            cursor: not-allowed;
+            opacity: 1;
+        }
+        
+        .sidebar-link:hover:not(.disabled) {
+            border-radius: 8px;
+            background-color: #F3F6F8;
+            transform: translateX(2px);
+            color: #2A58DC;
+        }
+        
+        /* ===== CONTENT AREA ===== */
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            padding: 40px 80px 40px 120px;
+            min-height: fit-content;
+            margin-top: 80px;
+            margin-left: 360px;
+        }
+        
+        .page-title {
+            align-self: stretch;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 500;
+            font-size: 32px;
+            line-height: 40px;
+            letter-spacing: -0.96px;
+            font-feature-settings: 'salt' on;
+            color: #13212F;
+            margin: 0;
+        }
+        
+        .content-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        
+        .content-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .section-heading {
+            align-self: stretch;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 400;
+            font-size: 20px;
+            line-height: 28px;
+            text-transform: uppercase;
+            color: #2A58DC;
+            margin: 0;
+        }
+        
+        .content-text {
+            align-self: stretch;
+            font-family: 'Figtree', sans-serif;
+            font-weight: 400;
+            font-size: 16px;
+            line-height: 24px;
+            font-feature-settings: 'salt' on;
+            color: #475569;
+            margin: 0;
+        }
+        
+        .content-text strong {
+            color: #13212F;
+            font-weight: 600;
+            font-feature-settings: 'salt' on;
+        }
+        
+        .content-text p {
+            margin-bottom: 16px;
+        }
+        
+        .content-text p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .content-text ul {
+            padding-left: 20px;
+            margin: 16px 0;
+        }
+        
+        .content-text li {
+            margin-bottom: 8px;
+        }
+        
+        .content-text li:last-child {
+            margin-bottom: 0;
+        }
+        
+        .agreement-statement {
+            padding: 24px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            margin-top: 24px;
+        }
+        
+        .agreement-statement p {
+            margin: 0;
+            font-weight: 600;
+            color: #13212F;
+        }
+        
+        /* ===== MOBILE NAVIGATION ===== */
+        .mobile-nav-toggle {
+            display: none;
+        }
+        
+        .mobile-get-started {
+            display: none;
+        }
+        
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 1200px) {
+            .main-content {
+                gap: 40px;
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            .main-content {
+                gap: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .policy-template {
+                gap: 24px;
+                padding: 0;
+            }
+            
+            .header {
+                height: 60px;
+                padding: 16px 0;
+            }
+            
+            .main-content {
+                flex-direction: column;
+                gap: 0;
+            }
+            
+            .sidebar {
+                position: fixed;
+                top: 60px;
+                left: 0;
+                right: 0;
+                width: 100%;
+                padding: 20px 16px;
+                padding-right: 0;
+                gap: 24px;
+                display: none;
+                background-color: var(--background-primary);
+                border-bottom: 1px solid var(--border-primary);
+                z-index: 1000;
+                max-height: 60vh;
+                overflow-y: auto;
+            }
+            
+            .sidebar.mobile-open {
+                display: flex;
+            }
+            
+            .mobile-nav-toggle {
+                display: block;
+                background: none;
+                border: none;
+                font-size: 18px;
+                cursor: pointer;
+                padding: 8px;
+            }
+            
+            .mobile-get-started {
+                display: block;
+                margin-top: 24px;
+                padding-top: 16px;
+                border-top: 1px solid var(--border-primary);
+            }
+            
+            .mobile-get-started .button {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            
+            .content-area {
+                padding: 20px 0;
+                gap: 24px;
+                margin-top: 60px;
+                margin-left: 0;
+            }
+            
+            .page-title {
+                font-size: 24px;
+                line-height: 32px;
+                letter-spacing: -0.72px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="policy-template">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <img src="assets/autospend-logo.svg" alt="Autospend" />
+            </div>
+            <div class="header-right">
+                <button class="button" onclick="alert('Get started for free clicked!')">
+                    <span>Get started for free</span>
+                    <div class="button-icon">
+                        <img src="assets/button-arrow-icon.svg" alt="arrow" />
+                    </div>
+                </button>
+                <button class="mobile-nav-toggle" onclick="toggleMobileNav()">☰</button>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <nav class="sidebar" id="sidebar">
+                <!-- Policies Section -->
+                <div class="sidebar-section">
+                    <h3 class="sidebar-heading">Policies</h3>
+                    <div class="sidebar-container">
+                        <button class="sidebar-link" onclick="window.location.href='index.html'">Terms and conditions</button>
+                        <button class="sidebar-link" onclick="window.location.href='cookie-policy.html'">Cookie policy</button>
+                        <button class="sidebar-link" onclick="window.location.href='data-use-policy.html'">Data use policy</button>
+                        <button class="sidebar-link" onclick="window.location.href='e-merchant-agreement.html'">E-marchant exchange serive agreement</button>
+                        <button class="sidebar-link" onclick="window.location.href='information-security-policy.html'">Information security policy</button>
+                        <button class="sidebar-link" onclick="window.location.href='privacy-policy.html'">Privacy policy</button>
+                        <button class="sidebar-link active">Risk management policy</button>
+                    </div>
+                </div>
+                
+                <!-- KYC Section - Hidden for now -->
+                <!-- <div class="sidebar-section">
+                    <h3 class="sidebar-heading">KYC</h3>
+                    <div class="sidebar-container">
+                        <button class="sidebar-link">Questionnaire corporate</button>
+                        <button class="sidebar-link">Questionnaire individual</button>
+                        <button class="sidebar-link">Declaration of source of funds</button>
+                        <button class="sidebar-link">KYC SOP</button>
+                    </div>
+                </div> -->
+                
+                <!-- Mobile Get Started Button -->
+                <div class="mobile-get-started">
+                    <button class="button" onclick="alert('Get started for free clicked!')">
+                        <span>Get started for free</span>
+                        <div class="button-icon">
+                            <img src="assets/button-arrow-icon.svg" alt="arrow" />
+                        </div>
+                    </button>
+                </div>
+            </nav>
+            
+            <!-- Content Area -->
+            <main class="content-area">
+                <h1 class="page-title">Risk Management Policy</h1>
+                
+                <!-- Introduction Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Introduction</h2>
+                    <div class="content-text">
+                        <p>This Risk Management Policy establishes the framework for identifying, assessing, managing, and mitigating risks associated with Stable Payments Inc's operations, including its cross-border stablecoin payment services. The policy ensures compliance with U.S. regulations, international best practices, and applicable laws, including the Bank Secrecy Act (BSA), USA PATRIOT Act, Financial Action Task Force (FATF) Recommendations, and Office of Foreign Assets Control (OFAC) guidelines.</p>
+                    </div>
+                </div>
+
+                <!-- Scope Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Scope</h2>
+                    <div class="content-text">
+                        <p>This policy applies to all employees, executives, board members, and third-party service providers engaged with Stable Payments Inc. It covers financial, operational, regulatory, cybersecurity, and reputational risks, particularly related to stablecoin transactions and cross-border payments.</p>
+                    </div>
+                </div>
+
+                <!-- Risk Governance Structure Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Risk Governance Structure</h2>
+                    <div class="content-text">
+                        <p><strong>3.1. Board of Directors</strong></p>
+                        <p>The Board oversees the company's risk management strategy, ensuring alignment with regulatory requirements and business objectives.</p>
+                        
+                        <p><strong>3.2. Risk Management Committee (RMC)</strong></p>
+                        <p>The RMC, comprising senior management and compliance officers, is responsible for risk assessment, mitigation planning, and monitoring.</p>
+                        
+                        <p><strong>3.3. Compliance & AML Team</strong></p>
+                        <p>This team ensures adherence to U.S. and international AML/CFT laws, FATF guidelines, and industry best practices.</p>
+                        
+                        <p><strong>3.4. Internal Audit & Monitoring</strong></p>
+                        <p>Regular audits assess the effectiveness of risk controls, identifying vulnerabilities in business operations and financial transactions.</p>
+                    </div>
+                </div>
+
+                <!-- Risk Identification & Assessment Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Risk Identification & Assessment</h2>
+                    <div class="content-text">
+                        <p><strong>4.1. Financial Risks</strong></p>
+                        <ul>
+                            <li>Market volatility impacting stablecoin value</li>
+                            <li>Liquidity risks related to real-time currency conversion</li>
+                            <li>Fraudulent transactions and unauthorized access</li>
+                        </ul>
+
+                        <p><strong>4.2. Regulatory & Compliance Risks</strong></p>
+                        <ul>
+                            <li>Non-compliance with BSA, FinCEN, OFAC, and FATF regulations</li>
+                            <li>Exposure to sanctioned entities or jurisdictions</li>
+                            <li>Deficiencies in KYC and AML controls</li>
+                        </ul>
+
+                        <p><strong>4.3. Operational Risks</strong></p>
+                        <ul>
+                            <li>System outages or transaction failures</li>
+                            <li>P2P integration risks</li>
+                            <li>Third-party vendor dependencies</li>
+                        </ul>
+
+                        <p><strong>4.4. Cybersecurity Risks</strong></p>
+                        <ul>
+                            <li>Data breaches and cyberattacks</li>
+                            <li>Phishing, ransomware, and insider threats</li>
+                            <li>Smart contract vulnerabilities</li>
+                        </ul>
+
+                        <p><strong>4.5. Reputational Risks</strong></p>
+                        <ul>
+                            <li>Negative public perception due to AML/CFT violations</li>
+                            <li>Non-compliance with consumer protection laws</li>
+                            <li>Legal disputes with merchants or regulators</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Risk Mitigation Strategies Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Risk Mitigation Strategies</h2>
+                    <div class="content-text">
+                        <p><strong>5.1. Financial Risk Controls</strong></p>
+                        <ul>
+                            <li>Maintain liquidity reserves for seamless settlement</li>
+                            <li>Implement fraud detection algorithms and anomaly detection</li>
+                            <li>Conduct real-time transaction monitoring</li>
+                        </ul>
+
+                        <p><strong>5.2. Regulatory Compliance Measures</strong></p>
+                        <ul>
+                            <li>Enforce strict KYC/CDD procedures for merchants and users</li>
+                            <li>Conduct sanctions screening and PEP checks on all transactions</li>
+                            <li>Ensure ongoing regulatory reporting to FinCEN and other agencies</li>
+                        </ul>
+
+                        <p><strong>5.3. Operational & Cybersecurity Safeguards</strong></p>
+                        <ul>
+                            <li>Implement multi-factor authentication (MFA) and encryption</li>
+                            <li>Conduct regular penetration testing and risk assessments</li>
+                            <li>Maintain an incident response plan for security breaches</li>
+                        </ul>
+
+                        <p><strong>5.4. Reputational Risk Mitigation</strong></p>
+                        <ul>
+                            <li>Transparent customer communication on risk policies</li>
+                            <li>Media and crisis management strategies</li>
+                            <li>Employee training on ethics, compliance, and risk awareness</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Chargeback Risk Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Chargeback Risk and Fraudulent Transactions</h2>
+                    <div class="content-text">
+                        <p>Stable Payment Inc. recognizes that fraud complaints and chargebacks can pose significant financial and reputational risks. To mitigate exposure to fraud-related risks and chargebacks, Stable Payment Inc. maintains controls that enable monitoring, flagging, and responding to high-risk transactions. These include, but are not limited to:</p>
+                        
+                        <ul>
+                            <li>Real-time transaction monitoring;</li>
+                            <li>Blacklisting of suspicious accounts or beneficiaries;</li>
+                            <li>Risk scoring and thresholds for high-risk jurisdictions and merchants;</li>
+                            <li>Automated flagging of inconsistent KYC data.</li>
+                        </ul>
+
+                        <p>In the event of a fraud complaint or chargeback:</p>
+                        <ul>
+                            <li>A risk hold may be placed on funds associated with the affected user or merchant;</li>
+                            <li>Settlement may be suspended pending investigation;</li>
+                            <li>The Risk & Compliance team may recommend account suspension or termination;</li>
+                            <li>A financial reserve may be held to offset potential losses.</li>
+                        </ul>
+
+                        <p>Chargeback activity is closely tracked, and merchants with elevated chargeback rates may be subject to enhanced due diligence, transaction caps, or offboarding.</p>
+                    </div>
+                </div>
+
+                <!-- Risk Monitoring & Reporting Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Risk Monitoring & Reporting</h2>
+                    <div class="content-text">
+                        <ul>
+                            <li><strong>Quarterly Risk Assessments:</strong> Review evolving threats and adjust risk strategies</li>
+                            <li><strong>Incident Reporting Protocols:</strong> Immediate reporting of compliance breaches or security incidents</li>
+                            <li><strong>Regulatory Compliance Reporting:</strong> Timely submission of suspicious activity reports (SARs) to FinCEN</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Enforcement & Accountability Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Enforcement & Accountability</h2>
+                    <div class="content-text">
+                        <p>Failure to comply with this Risk Management Policy may result in disciplinary action, including termination of employment or legal consequences as per U.S. federal and state laws.</p>
+                    </div>
+                </div>
+
+                <!-- Review & Updates Section -->
+                <div class="content-section">
+                    <h2 class="section-heading">Review & Updates</h2>
+                    <div class="content-text">
+                        <p>This policy shall be reviewed annually or as required by regulatory changes.</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <script>
+        // Mobile navigation toggle
+        function toggleMobileNav() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('mobile-open');
+        }
+        
+        // Add click handlers for sidebar navigation
+        document.querySelectorAll('.sidebar-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.classList.contains('disabled')) return;
+                
+                // Don't do anything if this link is already active
+                if (this.classList.contains('active')) {
+                    // Close mobile nav on mobile after selection
+                    if (window.innerWidth <= 768) {
+                        document.getElementById('sidebar').classList.remove('mobile-open');
+                    }
+                    return;
+                }
+                
+                // Remove active class from all links
+                document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+                
+                // Add active class to clicked link
+                this.classList.add('active');
+                
+                // Close mobile nav on mobile after selection
+                if (window.innerWidth <= 768) {
+                    document.getElementById('sidebar').classList.remove('mobile-open');
+                }
+                
+                // Let the onclick handler handle navigation
+                // Don't prevent default for links with onclick handlers
+            });
+        });
+        
+        // Close mobile nav when clicking outside
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.mobile-nav-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !toggle.contains(event.target)) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+    </script>
+</body>
+</html>
